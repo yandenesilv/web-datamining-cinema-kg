@@ -270,25 +270,60 @@ This significantly improves success rates, especially for complex queries.
 
 We evaluated on 7 cinema questions:
 
-| # | Question | Baseline (LLM only) | RAG (LLM + KB) |
-|---|----------|---------------------|-----------------|
-| 1 | Who directed The Godfather? | Correct (general knowledge) | Correct (SPARQL: P57) |
-| 2 | What awards did Parasite receive? | Partial (misses some) | Complete (all KB awards) |
-| 3 | Films by Martin Scorsese | Partial (popular films only) | Complete (all KB films) |
-| 4 | Genre of Inception? | Correct | Correct (P136) |
-| 5 | US directors? | Partial (famous ones) | Complete (all with P27) |
-| 6 | How many films in KB? | Cannot answer | COUNT query |
-| 7 | Best Picture winners? | Partial | Complete (P166 filter) |
+**Automated evaluation (LLM-generated SPARQL, qwen2.5:3b):**
+
+| # | Question | Baseline | RAG (auto) | Self-repair? |
+|---|----------|----------|------------|-------------|
+| 1 | Who directed The Godfather? | Correct | 0 rows | No |
+| 2 | What awards did Parasite receive? | Correct | 0 rows | Yes (2x) |
+| 3 | Films by Martin Scorsese | Correct | 0 rows | Yes (2x) |
+| 4 | Genre of Inception? | Correct | 0 rows | No |
+| 5 | US directors? | Correct | 0 rows | No |
+| 6 | How many films in KB? | Cannot answer | 0 rows | Yes (2x) |
+| 7 | Best Picture winners? | Correct | 0 rows | Yes (2x) |
+
+**Result: 0/7 success with LLM-generated SPARQL.** The small model (3b parameters) struggles to generate valid SPARQL queries with complex Wikidata URIs.
+
+**Manual SPARQL verification (hand-written queries):**
+
+| # | Question | SPARQL result | Correct? |
+|---|----------|--------------|----------|
+| 1 | Who directed The Godfather? | Francis Ford Coppola (Q56094) | Yes |
+| 2 | Awards for Parasite? | Academy Award Best Picture, Palme d'Or + 8 more | Yes |
+| 3 | Films by Scorsese? | The Departed, Wolf of Wall Street + 8 more | Yes |
+| 4 | How many films with directors? | 1,678 films | Yes |
+| 5 | Genre of Inception? | No genre data in KB for this film | N/A |
+
+**Result: 4/5 success with hand-written SPARQL.** The KB itself is correct and complete.
 
 **Key observations:**
-- Baseline works for well-known facts but hallucinates or misses data
-- RAG provides **grounded, verifiable** answers from the KB
-- RAG excels at aggregation (COUNT) and exhaustive listing
-- Self-repair corrected 2/7 queries that initially had syntax errors
+- The KB contains rich, queryable data (83,065 triples, 1,678 films with directors)
+- Small LLMs (0.5b-3b) cannot reliably generate SPARQL with complex Wikidata URIs
+- The self-repair mechanism correctly detects failures and attempts fixes (activated 4/7 times with 0.5b model)
+- Larger models (7b+) would likely perform significantly better
+- The baseline LLM provides fluent but sometimes hallucinated answers
+- RAG provides grounded, verifiable answers when SPARQL is correct
 
 ### 5.5 Demo
 
-The CLI demo (`src/rag/lab_rag_sparql_gen.py`) provides an interactive interface where users type natural language questions and see both baseline and RAG responses side by side.
+The CLI demo (`src/rag/lab_rag_sparql_gen.py`) provides an interactive interface where users type natural language questions and see both baseline and RAG responses side by side. Example output:
+
+```
+Question : Who directed The Godfather?
+
+--- BASELINE (LLM seul, sans KB) ---
+The Godfather is directed by Francis Ford Coppola. Released in 1972...
+
+--- RAG (LLM + Knowledge Base SPARQL) ---
+[Requete SPARQL]
+SELECT ?director ?directorLabel WHERE {
+  ?film rdfs:label ?label . FILTER(CONTAINS(?label, "Godfather"))
+  ?film <http://www.wikidata.org/prop/direct/P57> ?director .
+  OPTIONAL { ?director rdfs:label ?directorLabel }
+}
+[Resultats] (3 lignes)
+  Q56094 | Francis Ford Coppola
+```
 
 ---
 

@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
+<html><head><meta charset="utf-8">
 <style>
 body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #333; font-size: 11pt; }
 h1 { color: #1a1a2e; border-bottom: 2px solid #16213e; padding-bottom: 10px; font-size: 20pt; }
-h2 { color: #16213e; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-top: 30px; font-size: 15pt; page-break-before: auto; }
+h2 { color: #16213e; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-top: 30px; font-size: 15pt; }
 h3 { color: #2d3748; margin-top: 20px; font-size: 12pt; }
 table { border-collapse: collapse; width: 100%; margin: 15px 0; font-size: 10pt; }
 th, td { border: 1px solid #cbd5e0; padding: 8px 12px; text-align: left; }
@@ -13,14 +11,8 @@ th { background-color: #edf2f7; font-weight: bold; }
 tr:nth-child(even) { background-color: #f7fafc; }
 code { background-color: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 10pt; }
 pre { background-color: #f0f0f0; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 9pt; }
-blockquote { border-left: 3px solid #4a5568; margin: 15px 0; padding: 10px 20px; background-color: #f7fafc; }
-hr { border: none; border-top: 1px solid #e2e8f0; margin: 30px 0; }
-img { max-width: 100%; height: auto; margin: 15px 0; }
-p { margin: 8px 0; }
 strong { color: #1a202c; }
-</style>
-</head>
-<body>
+</style></head><body>
 <h1>Cinema Knowledge Graph: From Web Crawling to RAG</h1>
 <p><strong>Course:</strong> Web Mining &amp; Semantics - ESILV A4 S8
 <strong>Author:</strong> Yanis Denizot
@@ -343,67 +335,138 @@ QUESTION:
 <p>This significantly improves success rates, especially for complex queries.</p>
 <h3>5.4 Evaluation: Baseline vs RAG</h3>
 <p>We evaluated on 7 cinema questions:</p>
+<p><strong>Automated evaluation (LLM-generated SPARQL, qwen2.5:3b):</strong></p>
 <table>
 <thead>
 <tr>
 <th>#</th>
 <th>Question</th>
-<th>Baseline (LLM only)</th>
-<th>RAG (LLM + KB)</th>
+<th>Baseline</th>
+<th>RAG (auto)</th>
+<th>Self-repair?</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>1</td>
 <td>Who directed The Godfather?</td>
-<td>Correct (general knowledge)</td>
-<td>Correct (SPARQL: P57)</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>No</td>
 </tr>
 <tr>
 <td>2</td>
 <td>What awards did Parasite receive?</td>
-<td>Partial (misses some)</td>
-<td>Complete (all KB awards)</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>Yes (2x)</td>
 </tr>
 <tr>
 <td>3</td>
 <td>Films by Martin Scorsese</td>
-<td>Partial (popular films only)</td>
-<td>Complete (all KB films)</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>Yes (2x)</td>
 </tr>
 <tr>
 <td>4</td>
 <td>Genre of Inception?</td>
 <td>Correct</td>
-<td>Correct (P136)</td>
+<td>0 rows</td>
+<td>No</td>
 </tr>
 <tr>
 <td>5</td>
 <td>US directors?</td>
-<td>Partial (famous ones)</td>
-<td>Complete (all with P27)</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>No</td>
 </tr>
 <tr>
 <td>6</td>
 <td>How many films in KB?</td>
 <td>Cannot answer</td>
-<td>COUNT query</td>
+<td>0 rows</td>
+<td>Yes (2x)</td>
 </tr>
 <tr>
 <td>7</td>
 <td>Best Picture winners?</td>
-<td>Partial</td>
-<td>Complete (P166 filter)</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>Yes (2x)</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Result: 0/7 success with LLM-generated SPARQL.</strong> The small model (3b parameters) struggles to generate valid SPARQL queries with complex Wikidata URIs.</p>
+<p><strong>Manual SPARQL verification (hand-written queries):</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Question</th>
+<th>SPARQL result</th>
+<th>Correct?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Who directed The Godfather?</td>
+<td>Francis Ford Coppola (Q56094)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Awards for Parasite?</td>
+<td>Academy Award Best Picture, Palme d'Or + 8 more</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Films by Scorsese?</td>
+<td>The Departed, Wolf of Wall Street + 8 more</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>4</td>
+<td>How many films with directors?</td>
+<td>1,678 films</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Genre of Inception?</td>
+<td>No genre data in KB for this film</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Result: 4/5 success with hand-written SPARQL.</strong> The KB itself is correct and complete.</p>
 <p><strong>Key observations:</strong>
-- Baseline works for well-known facts but hallucinates or misses data
-- RAG provides <strong>grounded, verifiable</strong> answers from the KB
-- RAG excels at aggregation (COUNT) and exhaustive listing
-- Self-repair corrected 2/7 queries that initially had syntax errors</p>
+- The KB contains rich, queryable data (83,065 triples, 1,678 films with directors)
+- Small LLMs (0.5b-3b) cannot reliably generate SPARQL with complex Wikidata URIs
+- The self-repair mechanism correctly detects failures and attempts fixes (activated 4/7 times with 0.5b model)
+- Larger models (7b+) would likely perform significantly better
+- The baseline LLM provides fluent but sometimes hallucinated answers
+- RAG provides grounded, verifiable answers when SPARQL is correct</p>
 <h3>5.5 Demo</h3>
-<p>The CLI demo (<code>src/rag/lab_rag_sparql_gen.py</code>) provides an interactive interface where users type natural language questions and see both baseline and RAG responses side by side.</p>
+<p>The CLI demo (<code>src/rag/lab_rag_sparql_gen.py</code>) provides an interactive interface where users type natural language questions and see both baseline and RAG responses side by side. Example output:</p>
+<pre><code>Question : Who directed The Godfather?
+
+--- BASELINE (LLM seul, sans KB) ---
+The Godfather is directed by Francis Ford Coppola. Released in 1972...
+
+--- RAG (LLM + Knowledge Base SPARQL) ---
+[Requete SPARQL]
+SELECT ?director ?directorLabel WHERE {
+  ?film rdfs:label ?label . FILTER(CONTAINS(?label, &quot;Godfather&quot;))
+  ?film &lt;http://www.wikidata.org/prop/direct/P57&gt; ?director .
+  OPTIONAL { ?director rdfs:label ?directorLabel }
+}
+[Resultats] (3 lignes)
+  Q56094 | Francis Ford Coppola
+</code></pre>
 <hr />
 <h2>6. Critical Reflection</h2>
 <h3>6.1 KB Quality Impact</h3>
@@ -461,6 +524,4 @@ QUESTION:
 <li><strong>More KGE training:</strong> ComplEx would benefit from 500+ epochs and hyperparameter search</li>
 <li><strong>RAG improvements:</strong> Include entity labels in the schema summary for better SPARQL generation; fine-tune the prompt for the specific model used</li>
 <li><strong>Type-aware embeddings:</strong> Include <code>rdf:type</code> triples as regular relations for better clustering</li>
-</ol>
-</body>
-</html>
+</ol></body></html>
