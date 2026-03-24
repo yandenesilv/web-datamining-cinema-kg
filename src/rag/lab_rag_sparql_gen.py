@@ -28,11 +28,11 @@ from rdflib import Graph
 
 TTL_FILE = "../../kg_artifacts/expanded_kb.ttl"
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "gemma:2b"  # Modele par defaut, peut etre change
+MODEL = "qwen2.5:0.5b"  # Modele par defaut, peut etre change
 
-MAX_PREDICATES = 80
-MAX_CLASSES = 40
-SAMPLE_TRIPLES = 25
+MAX_PREDICATES = 30
+MAX_CLASSES = 15
+SAMPLE_TRIPLES = 10
 MAX_REPAIR_ATTEMPTS = 2
 
 
@@ -52,7 +52,7 @@ def ask_local_llm(prompt: str, model: str = MODEL) -> str:
     }
 
     try:
-        response = requests.post(OLLAMA_URL, json=payload, timeout=120)
+        response = requests.post(OLLAMA_URL, json=payload, timeout=300)
     except requests.ConnectionError:
         raise RuntimeError(
             "Impossible de se connecter a Ollama.\n"
@@ -167,17 +167,51 @@ def build_schema_summary(g: Graph) -> str:
 # -- 3) Prompting : NL -> SPARQL ----------------------------------------------
 
 SPARQL_INSTRUCTIONS = """
-You are a SPARQL generator for a cinema knowledge graph. Convert the user QUESTION into a valid SPARQL 1.1 SELECT query.
+You are a SPARQL generator for a cinema knowledge graph. Convert the QUESTION into a SPARQL SELECT query.
 
-STRICT RULES:
-- Use ONLY the IRIs/prefixes visible in the SCHEMA SUMMARY
-- Prefer readable SELECT projections with descriptive variable names
-- Do NOT invent new predicates or classes
-- Return ONLY the SPARQL query in a single fenced code block labeled ```sparql
-- No explanations or extra text outside the code block
-- For text matching, use FILTER with regex() on the URI or rdfs:label
-- Wikidata properties: P57=director, P161=cast member, P166=award received, P136=genre, P495=country of origin, P577=publication date, P27=country of citizenship
-- Use rdfs:label when available, otherwise extract entity name from URI
+RULES:
+- Use ONLY predicates from the SCHEMA SUMMARY below
+- Wikidata predicates use full URIs like <http://www.wikidata.org/prop/direct/P57>
+- Entities use URIs like <http://www.wikidata.org/entity/Q12345>
+- For text search, use FILTER(CONTAINS(STR(?var), "search_term"))
+- Return ONLY the SPARQL in a ```sparql code block
+
+KEY PREDICATES:
+- <http://www.wikidata.org/prop/direct/P57> = director
+- <http://www.wikidata.org/prop/direct/P161> = cast member
+- <http://www.wikidata.org/prop/direct/P166> = award received
+- <http://www.wikidata.org/prop/direct/P136> = genre
+- <http://www.wikidata.org/prop/direct/P495> = country of origin
+- <http://www.wikidata.org/prop/direct/P27> = country of citizenship
+- <http://www.w3.org/2000/01/rdf-schema#label> = label/name
+
+EXAMPLES:
+
+Q: Who directed The Godfather?
+```sparql
+SELECT ?director ?directorLabel WHERE {
+  ?film <http://www.w3.org/2000/01/rdf-schema#label> ?label .
+  FILTER(CONTAINS(?label, "Godfather"))
+  ?film <http://www.wikidata.org/prop/direct/P57> ?director .
+  OPTIONAL { ?director <http://www.w3.org/2000/01/rdf-schema#label> ?directorLabel }
+}
+```
+
+Q: What genre is Inception?
+```sparql
+SELECT ?genre WHERE {
+  ?film <http://www.w3.org/2000/01/rdf-schema#label> ?label .
+  FILTER(CONTAINS(?label, "Inception"))
+  ?film <http://www.wikidata.org/prop/direct/P136> ?genre .
+}
+```
+
+Q: How many films are in the knowledge base?
+```sparql
+SELECT (COUNT(DISTINCT ?film) AS ?count) WHERE {
+  ?film <http://www.wikidata.org/prop/direct/P57> ?director .
+}
+```
 """
 
 def make_sparql_prompt(schema_summary: str, question: str) -> str:
