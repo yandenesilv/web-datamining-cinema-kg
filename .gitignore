@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node (from Cours5 report generation)
+node_modules/
+package-lock.json
+
+# Large data files (regenerable)
+data/crawler_output.jsonl
+data/extracted_knowledge.csv
+kg_artifacts/expanded_kb.nt
+
+# Trained models (large binary files)
+results/transe/trained_model.pkl
+results/transe/training_triples/
+results/complex/trained_model.pkl
+results/complex/training_triples/
+
+# OWLReady2 temp files
+*.sqlite3
+
+# Temp files
+*.tmp
+*.bak
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+*.local
+
+# Original course folders (kept for reference but not in final submission)
+Cours1/
+Cours 4/
+Cours5/
+cours6/
+TD1/

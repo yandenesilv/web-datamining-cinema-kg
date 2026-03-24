@@ -1,0 +1,26 @@
+# Web Crawling & Text Extraction
+httpx>=0.24.0
+trafilatura>=1.6.0
+
+# NLP / NER
+spacy>=3.5.0
+
+# RDF & SPARQL
+rdflib>=6.3.0
+SPARQLWrapper>=2.0.0
+
+# Ontology & SWRL Reasoning
+owlready2>=0.40
+
+# Knowledge Graph Embeddings
+pykeen>=1.10.0
+torch>=2.0.0
+
+# Analysis & Visualization
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+
+# RAG Pipeline (Ollama API)
+requests>=2.31.0
