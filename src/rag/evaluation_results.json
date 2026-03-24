@@ -2,43 +2,136 @@
   "model": "qwen2.5:3b",
   "kb_file": "../../kg_artifacts/expanded_kb.ttl",
   "kb_triples": 83065,
-  "note": "Manual SPARQL verification shows the KB is correct. Small LLMs struggle to generate valid SPARQL but the pipeline and self-repair mechanism work correctly.",
-  "manual_verification": [
+  "questions_count": 7,
+  "results": [
     {
+      "id": 1,
       "question": "Who directed The Godfather?",
-      "sparql_works": true,
-      "answer": "Francis Ford Coppola (Q56094)",
-      "rows": 3
+      "expected": "Francis Ford Coppola",
+      "category": "simple lookup",
+      "baseline_answer": "The Godfather was directed by Francis Ford Coppola. He is also the screenwriter and producer of this classic film.",
+      "baseline_time": 13.97,
+      "baseline_error": null,
+      "rag_query": "SELECT ?directorLabel WHERE {\n  ?film <http://www.wikidata.org/prop/direct/P57> ?director .\n  FILTER(CONTAINS(?film, \"The Godfather\"))\n  OPTIONAL { ?director <http://www.w3.org/2000/01/rdf-schema#label> ?directorLabel }\n}",
+      "rag_rows": [],
+      "rag_row_count": 0,
+      "rag_repaired": false,
+      "rag_repair_count": 0,
+      "rag_error": null,
+      "rag_time": 166.61,
+      "rag_success": false
     },
     {
+      "id": 2,
       "question": "What awards did Parasite receive?",
-      "sparql_works": true,
-      "answer": "Academy Award Best Picture, Palme d Or, etc.",
-      "rows": 10
+      "expected": "Academy Award / Palme d'Or / multiple awards",
+      "category": "multi-value",
+      "baseline_answer": "I'm sorry for any confusion, but there seems to be an error in your question. \"Parasite\" is not a film that has received significant mainstream award recognition. The term you might be thinking of could be the 2019 South Korean movie titled \"Parasite,\" directed by Bong Joon-ho.\n\nThis film did receive several awards and nominations, including:\n\n- Won the Palme d'Or (Golden Palm) at the 2019 Cannes Film Festival.\n- Won Best Picture at the 2020 Academy Awards (also known as the Oscars).\n- Won seven",
+      "baseline_time": 22.97,
+      "baseline_error": null,
+      "rag_query": "SELECT ?award WHERE {\n  <http://cinema-kb.org/Parasite> <http://www.wikidata.org/prop/direct/P166> ?award .\n}",
+      "rag_rows": [],
+      "rag_row_count": 0,
+      "rag_repaired": false,
+      "rag_repair_count": 0,
+      "rag_error": null,
+      "rag_time": 162.28,
+      "rag_success": false
     },
     {
-      "question": "How many films with directors?",
-      "sparql_works": true,
-      "answer": "1678 films",
-      "rows": 1
+      "id": 3,
+      "question": "List some films directed by Martin Scorsese",
+      "expected": "Goodfellas, Taxi Driver, The Departed, etc.",
+      "category": "reverse lookup",
+      "baseline_answer": "Martin Scorsese is known for his critically acclaimed and influential works in American cinema. Here's a list of some of his most notable films:\n\n1. \"Mean Streets\" (1973)\n2. \"The King of Comedy\" (1982)\n3. \"Raging Bull\" (1980)\n4. \"Goodfellas\" (1990)\n5. \"Casino\" (1992)\n6. \"The Wolf of Wall Street\" (2013) - This is a remake of his 1987 film, which he also directed.\n7. \"You Will Meet a Tall Dark Stranger\" (1991)\n8. \"My Favorite Year\" (1994)\n9. \"Shutter Island\" (2010)\n\nPlease note that some films are",
+      "baseline_time": 26.16,
+      "baseline_error": null,
+      "rag_query": "",
+      "rag_rows": [],
+      "rag_row_count": 0,
+      "rag_repaired": false,
+      "rag_repair_count": 0,
+      "rag_error": "HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=300)",
+      "rag_time": 0,
+      "rag_success": false
     },
     {
-      "question": "Films by Martin Scorsese?",
-      "sparql_works": true,
-      "answer": "The Departed, Wolf of Wall Street, etc.",
-      "rows": 10
+      "id": 4,
+      "question": "What is the genre of Inception?",
+      "expected": "Science fiction / Action / Thriller",
+      "category": "property lookup",
+      "baseline_answer": "Inception is generally considered to be a science fiction (sci-fi) and action movie. It was directed by Christopher Nolan and stars Leonardo DiCaprio, Tom Hardy, and Ken Watanabe. The film's complex storyline involving dreams within dreams falls under both genres.",
+      "baseline_time": 116.83,
+      "baseline_error": null,
+      "rag_query": "SELECT ?genre WHERE {\n  <http://www.wikidata.org/entity/Q12423> <http://www.wikidata.org/prop/direct/P136> ?genre .\n}",
+      "rag_rows": [],
+      "rag_row_count": 0,
+      "rag_repaired": false,
+      "rag_repair_count": 0,
+      "rag_error": null,
+      "rag_time": 148.38,
+      "rag_success": false
     },
     {
-      "question": "Genre of Inception?",
-      "sparql_works": true,
-      "answer": "No genre data for Inception in KB",
-      "rows": 0
+      "id": 5,
+      "question": "Which directors are from the United States?",
+      "expected": "Multiple US directors (Spielberg, Scorsese, etc.)",
+      "category": "filter query",
+      "baseline_answer": "There have been many influential and renowned American directors throughout history. Here is a list of some famous ones across various genres:\n\n1. Stanley Kubrick - Known for his critically acclaimed films such as \"A Clockwork Orange,\" \"Eyes Wide Shut,\" and \"The Shining.\"\n2. Alfred Hitchcock - Famous for the suspenseful thriller genre, including classics like \"Psycho\" and \"Rear Window.\"\n3. Martin Scorsese - A key figure in American cinema, known for gritty crime dramas such as \"Mean Streets,\" \"T",
+      "baseline_time": 33.59,
+      "baseline_error": null,
+      "rag_query": "SELECT ?director ?directorLabel WHERE {\n  ?film <http://www.w3.org/2000/01/rdf-schema#label> ?label .\n  FILTER(CONTAINS(?label, \"United States\"))\n  ?film <http://www.wikidata.org/prop/direct/P57> ?director .\n  ?director <http://www.wikidata.org/prop/direct/P495> <http://www.wikidata.org/entity/Q13>\n  OPTIONAL { ?director <http://www.w3.org/2000/01/rdf-schema#label> ?directorLabel }\n}",
+      "rag_rows": [],
+      "rag_row_count": 0,
+      "rag_repaired": false,
+      "rag_repair_count": 0,
+      "rag_error": null,
+      "rag_time": 176.05,
+      "rag_success": false
+    },
+    {
+      "id": 6,
+      "question": "How many films are in the knowledge base?",
+      "expected": "Count of films (varies)",
+      "category": "aggregation",
+      "baseline_answer": "I'm sorry, but I don't have direct access to an up-to-date list of all films currently existing or created by Alibaba Cloud or any other entity. My training data covers a wide range of topics, including information about various movies and film-related content, but it doesn't provide an exhaustive count of all films in existence.\n\nThe scale of such a project would be enormous, involving comprehensive cataloging from every studio, streaming service, and independent filmmaker across the globe. It'",
+      "baseline_time": 21.5,
+      "baseline_error": null,
+      "rag_query": "SELECT (COUNT(DISTINCT ?film) AS ?count) WHERE {\n  ?film <http://www.wikidata.org/prop/direct/P57> ?director .\n}",
+      "rag_rows": [
+        [
+          "1678"
+        ]
+      ],
+      "rag_row_count": 1,
+      "rag_repaired": false,
+      "rag_repair_count": 0,
+      "rag_error": null,
+      "rag_time": 155.72,
+      "rag_success": true
+    },
+    {
+      "id": 7,
+      "question": "Which films won the Academy Award for Best Picture?",
+      "expected": "List of Best Picture winners",
+      "category": "specific lookup",
+      "baseline_answer": "The Academy Awards (also known as the Oscars) annually honor excellence in film and present the Academy Award for Best Picture to the most outstanding motion picture(s). The winners are selected by the Board of Governors from Academy members who participated in the voting. Here is a list of some recent winners of the Academy Award for Best Picture:\n\n- 2023: \"Everything Everywhere All At Once\"\n- 2022: \"CODA\" (Coined as an abbreviation for \"Children Of Deaf Parents\")\n- 2021: \"Parasite\"\n- 2020: \"Th",
+      "baseline_time": 29.15,
+      "baseline_error": null,
+      "rag_query": "SELECT ?film ?filmLabel WHERE {\n  ?film <http://www.wikidata.org/prop/direct/P166> wd:Q8075 .\n  FILTER(CONTAINS(?filmLabel, \"Academy Award for Best Picture\"))\n}",
+      "rag_rows": [],
+      "rag_row_count": 0,
+      "rag_repaired": false,
+      "rag_repair_count": 0,
+      "rag_error": null,
+      "rag_time": 149.81,
+      "rag_success": false
     }
   ],
-  "llm_evaluation": {
-    "model": "qwen2.5:3b",
-    "success_rate": "0/7 (LLM-generated SPARQL)",
-    "manual_sparql_success": "4/5 (hand-written SPARQL)",
-    "analysis": "Small LLMs (0.5b-3b) lack the ability to generate valid SPARQL with complex Wikidata URIs. Larger models (7b+) would likely perform better. The self-repair mechanism activated for 4/7 queries with the 0.5b model."
+  "summary": {
+    "rag_success_count": 1,
+    "rag_repair_count": 0,
+    "avg_baseline_time": 37.74,
+    "avg_rag_time": 136.98
   }
 }

@@ -231,9 +231,9 @@ The t-SNE plot shows entity clustering by semantic similarity. Entities connecte
 
 The RAG pipeline loads the expanded KB and builds a schema summary containing:
 - All registered prefixes (rdf, rdfs, owl, wd, wdt, etc.)
-- Up to 80 distinct predicates with full URIs
-- Up to 40 classes from rdf:type
-- 25 sample triples for context
+- Up to 30 distinct predicates with full URIs
+- Up to 15 classes from rdf:type
+- 10 sample triples for context
 
 This summary is injected into the LLM prompt so it can generate valid SPARQL.
 
@@ -275,14 +275,14 @@ We evaluated on 7 cinema questions:
 | # | Question | Baseline | RAG (auto) | Self-repair? |
 |---|----------|----------|------------|-------------|
 | 1 | Who directed The Godfather? | Correct | 0 rows | No |
-| 2 | What awards did Parasite receive? | Correct | 0 rows | Yes (2x) |
-| 3 | Films by Martin Scorsese | Correct | 0 rows | Yes (2x) |
+| 2 | What awards did Parasite receive? | Correct | 0 rows | No |
+| 3 | Films by Martin Scorsese | Correct | 0 rows | No |
 | 4 | Genre of Inception? | Correct | 0 rows | No |
 | 5 | US directors? | Correct | 0 rows | No |
-| 6 | How many films in KB? | Cannot answer | 0 rows | Yes (2x) |
-| 7 | Best Picture winners? | Correct | 0 rows | Yes (2x) |
+| 6 | How many films in KB? | Cannot answer | **1 row** | No |
+| 7 | Best Picture winners? | Correct | 0 rows | No |
 
-**Result: 0/7 success with LLM-generated SPARQL.** The small model (3b parameters) struggles to generate valid SPARQL queries with complex Wikidata URIs.
+**Result: 1/7 success with LLM-generated SPARQL.** The small model (3b parameters) struggles to generate valid SPARQL queries with complex Wikidata URIs. Q6 succeeded because the COUNT query pattern was provided as a few-shot example in the prompt.
 
 **Manual SPARQL verification (hand-written queries):**
 

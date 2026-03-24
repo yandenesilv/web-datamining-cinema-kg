@@ -1,19 +1,17 @@
-<!DOCTYPE html>
-<html><head><meta charset="utf-8">
+<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
-body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #333; font-size: 11pt; }
-h1 { color: #1a1a2e; border-bottom: 2px solid #16213e; padding-bottom: 10px; font-size: 20pt; }
-h2 { color: #16213e; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-top: 30px; font-size: 15pt; }
-h3 { color: #2d3748; margin-top: 20px; font-size: 12pt; }
-table { border-collapse: collapse; width: 100%; margin: 15px 0; font-size: 10pt; }
-th, td { border: 1px solid #cbd5e0; padding: 8px 12px; text-align: left; }
-th { background-color: #edf2f7; font-weight: bold; }
-tr:nth-child(even) { background-color: #f7fafc; }
-code { background-color: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 10pt; }
-pre { background-color: #f0f0f0; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 9pt; }
-strong { color: #1a202c; }
-</style></head><body>
-<h1>Cinema Knowledge Graph: From Web Crawling to RAG</h1>
+body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333;font-size:11pt}
+h1{color:#1a1a2e;border-bottom:2px solid #16213e;padding-bottom:10px;font-size:20pt}
+h2{color:#16213e;border-bottom:1px solid #e2e8f0;padding-bottom:5px;margin-top:30px;font-size:15pt}
+h3{color:#2d3748;margin-top:20px;font-size:12pt}
+table{border-collapse:collapse;width:100%;margin:15px 0;font-size:10pt}
+th,td{border:1px solid #cbd5e0;padding:8px 12px;text-align:left}
+th{background:#edf2f7;font-weight:bold}
+tr:nth-child(even){background:#f7fafc}
+code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:10pt}
+pre{background:#f0f0f0;padding:15px;border-radius:5px;overflow-x:auto;font-size:9pt}
+strong{color:#1a202c}
+</style></head><body><h1>Cinema Knowledge Graph: From Web Crawling to RAG</h1>
 <p><strong>Course:</strong> Web Mining &amp; Semantics - ESILV A4 S8
 <strong>Author:</strong> Yanis Denizot
 <strong>Date:</strong> March 2026</p>
@@ -305,9 +303,9 @@ The possessive "Nolan's" creates ambiguity: is Nolan the director or producer? O
 <h3>5.1 Schema Summary</h3>
 <p>The RAG pipeline loads the expanded KB and builds a schema summary containing:
 - All registered prefixes (rdf, rdfs, owl, wd, wdt, etc.)
-- Up to 80 distinct predicates with full URIs
-- Up to 40 classes from rdf:type
-- 25 sample triples for context</p>
+- Up to 30 distinct predicates with full URIs
+- Up to 15 classes from rdf:type
+- 10 sample triples for context</p>
 <p>This summary is injected into the LLM prompt so it can generate valid SPARQL.</p>
 <h3>5.2 NL -&gt; SPARQL Prompt Template</h3>
 <pre><code>You are a SPARQL generator for a cinema knowledge graph.
@@ -359,14 +357,14 @@ QUESTION:
 <td>What awards did Parasite receive?</td>
 <td>Correct</td>
 <td>0 rows</td>
-<td>Yes (2x)</td>
+<td>No</td>
 </tr>
 <tr>
 <td>3</td>
 <td>Films by Martin Scorsese</td>
 <td>Correct</td>
 <td>0 rows</td>
-<td>Yes (2x)</td>
+<td>No</td>
 </tr>
 <tr>
 <td>4</td>
@@ -386,19 +384,19 @@ QUESTION:
 <td>6</td>
 <td>How many films in KB?</td>
 <td>Cannot answer</td>
-<td>0 rows</td>
-<td>Yes (2x)</td>
+<td><strong>1 row</strong></td>
+<td>No</td>
 </tr>
 <tr>
 <td>7</td>
 <td>Best Picture winners?</td>
 <td>Correct</td>
 <td>0 rows</td>
-<td>Yes (2x)</td>
+<td>No</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Result: 0/7 success with LLM-generated SPARQL.</strong> The small model (3b parameters) struggles to generate valid SPARQL queries with complex Wikidata URIs.</p>
+<p><strong>Result: 1/7 success with LLM-generated SPARQL.</strong> The small model (3b parameters) struggles to generate valid SPARQL queries with complex Wikidata URIs. Q6 succeeded because the COUNT query pattern was provided as a few-shot example in the prompt.</p>
 <p><strong>Manual SPARQL verification (hand-written queries):</strong></p>
 <table>
 <thead>

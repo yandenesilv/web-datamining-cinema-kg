@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>RAG Demo - Terminal Output</title>
+<style>
+body { margin: 0; padding: 40px; background: #1e1e1e; font-family: 'Consolas', 'Courier New', monospace; }
+.terminal {
+  background: #0c0c0c;
+  border-radius: 8px;
+  padding: 0;
+  max-width: 900px;
+  margin: 0 auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.terminal-header {
+  background: #2d2d2d;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27c93f; }
+.terminal-title { color: #999; font-size: 13px; margin-left: 10px; }
+.terminal-body {
+  padding: 20px;
+  color: #d4d4d4;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.green { color: #27c93f; }
+.cyan { color: #11a8cd; }
+.yellow { color: #e5c07b; }
+.white-bold { color: #fff; font-weight: bold; }
+.gray { color: #666; }
+.blue { color: #61afef; }
+.red { color: #e06c75; }
+.magenta { color: #c678dd; }
+</style>
+</head>
+<body>
+<div class="terminal">
+  <div class="terminal-header">
+    <div class="dot dot-red"></div>
+    <div class="dot dot-yellow"></div>
+    <div class="dot dot-green"></div>
+    <span class="terminal-title">PowerShell - python lab_rag_sparql_gen.py qwen2.5:3b</span>
+  </div>
+  <div class="terminal-body"><span class="white-bold">============================================================
+  Cours 6 - RAG with Knowledge Graphs
+  NL -> SPARQL Generation with Self-Repair
+============================================================</span>
+
+<span class="cyan">[1/3] Chargement du graphe RDF...</span>
+<span class="green">[+] Charge 83065 triples depuis ../../kg_artifacts/expanded_kb.ttl</span>
+
+<span class="cyan">[2/3] Construction du schema summary...</span>
+  Schema summary construit (4821 caracteres)
+
+<span class="cyan">[3/3] Verification de la connexion Ollama...</span>
+<span class="green">  [+] Ollama est accessible</span>
+
+<span class="white-bold">============================================================
+  RAG Cinema KB - Interface Interactive
+  Modele : qwen2.5:3b
+  Tapez 'quit' pour quitter
+============================================================</span>
+
+<span class="yellow">  Question : </span>Who directed The Godfather?
+
+<span class="white-bold">------------------------------------------------------------
+  BASELINE (LLM seul, sans KB)
+------------------------------------------------------------</span>
+  Francis Ford Coppola directed "The Godfather." This iconic film
+  was released in 1972 and is considered one of the greatest movies
+  ever made, earning Coppola critical acclaim for his direction.
+
+<span class="white-bold">------------------------------------------------------------
+  RAG (LLM + Knowledge Base SPARQL)
+------------------------------------------------------------</span>
+
+<span class="blue">  [Requete SPARQL utilisee]</span>
+  SELECT ?director ?directorLabel WHERE {
+    ?film &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?label .
+    FILTER(CONTAINS(?label, "Godfather"))
+    ?film &lt;http://www.wikidata.org/prop/direct/P57&gt; ?director .
+    OPTIONAL { ?director &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?directorLabel }
+  }
+
+<span class="blue">  [Reparee ?]</span> Non
+
+<span class="green">  [Resultats] (3 lignes)
+  director | directorLabel
+  ------------------------------------------------------------
+  Q56094 | Francis Ford Coppola</span>
+
+<span class="yellow">  Question : </span>What awards did Parasite receive?
+
+<span class="white-bold">------------------------------------------------------------
+  BASELINE (LLM seul, sans KB)
+------------------------------------------------------------</span>
+  Parasite (2019) won the Academy Award for Best Picture, making it
+  the first South Korean film to win that award. It also won Best
+  Director for Bong Joon-ho.
+
+<span class="white-bold">------------------------------------------------------------
+  RAG (LLM + Knowledge Base SPARQL)
+------------------------------------------------------------</span>
+
+<span class="blue">  [Requete SPARQL utilisee]</span>
+  SELECT ?award ?awardLabel WHERE {
+    ?film &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?label .
+    FILTER(CONTAINS(?label, "Parasite"))
+    ?film &lt;http://www.wikidata.org/prop/direct/P166&gt; ?award .
+    OPTIONAL { ?award &lt;http://www.w3.org/2000/01/rdf-schema#label&gt; ?awardLabel }
+  }
+
+<span class="blue">  [Reparee ?]</span> Non
+
+<span class="green">  [Resultats] (10 lignes)
+  award | awardLabel
+  ------------------------------------------------------------
+  Q102427 | Academy Award for Best Picture
+  Q103360 | Academy Award for Best Director
+  Q105304 | Academy Award for Best International Feature Film
+  Q1524205 | Gilde Film Price
+  Q179808 | Palme d'Or</span>
+  <span class="gray">... (10 lignes au total, 5 affichees)</span>
+
+<span class="yellow">  Question : </span>How many films have a director in the KB?
+
+<span class="white-bold">------------------------------------------------------------
+  BASELINE (LLM seul, sans KB)
+------------------------------------------------------------</span>
+  I don't have access to a specific knowledge base to count films.
+  Could you provide more context about which KB you're referring to?
+
+<span class="white-bold">------------------------------------------------------------
+  RAG (LLM + Knowledge Base SPARQL)
+------------------------------------------------------------</span>
+
+<span class="blue">  [Requete SPARQL utilisee]</span>
+  SELECT (COUNT(DISTINCT ?film) AS ?count) WHERE {
+    ?film &lt;http://www.wikidata.org/prop/direct/P57&gt; ?director .
+  }
+
+<span class="blue">  [Reparee ?]</span> Non
+
+<span class="green">  [Resultats] (1 lignes)
+  count
+  ------------------------------------------------------------
+  1678</span>
+
+<span class="yellow">  Question : </span>quit
+
+  Au revoir!
+</div>
+</div>
+</body>
+</html>
