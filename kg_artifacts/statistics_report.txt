@@ -1,0 +1,24 @@
+============================================================
+  Knowledge Base Statistics Report
+  Course: Web Mining & Semantics - ESILV
+============================================================
+
+Total triples:            72409
+Total entities:           20158
+Total distinct relations: 39
+owl:sameAs links:         183
+
+Top 10 most connected entities:
+--------------------------------------------------
+  United States                             (1669 connections)
+  drama film                                (1192 connections)
+  GB                                        (471 connections)
+  National Board of Review: Top Ten Films   (464 connections)
+  Germany                                   (296 connections)
+  silent film                               (264 connections)
+  United Kingdom                            (259 connections)
+  human                                     (258 connections)
+  romance film                              (257 connections)
+  2022                                      (236 connections)
+
+--------------------------------------------------
