@@ -1,0 +1,154 @@
+{
+  "nearest_neighbors": [
+    {
+      "entity": "Q7836246",
+      "neighbors": [
+        {
+          "name": "Q463101",
+          "similarity": 0.4006185531616211
+        },
+        {
+          "name": "Q450219",
+          "similarity": 0.3717860281467438
+        },
+        {
+          "name": "Q3659431",
+          "similarity": 0.3677774667739868
+        },
+        {
+          "name": "Q231704",
+          "similarity": 0.352159708738327
+        },
+        {
+          "name": "Q335587",
+          "similarity": 0.3338032066822052
+        }
+      ]
+    },
+    {
+      "entity": "Q41148",
+      "neighbors": [
+        {
+          "name": "Q55303",
+          "similarity": 0.5488104224205017
+        },
+        {
+          "name": "Q270097",
+          "similarity": 0.501223087310791
+        },
+        {
+          "name": "Q26806",
+          "similarity": 0.4975724518299103
+        },
+        {
+          "name": "Q13595531",
+          "similarity": 0.4834946393966675
+        },
+        {
+          "name": "Q312656",
+          "similarity": 0.47469401359558105
+        }
+      ]
+    },
+    {
+      "entity": "Q3772",
+      "neighbors": [
+        {
+          "name": "Q55422",
+          "similarity": 0.5763802528381348
+        },
+        {
+          "name": "Q15069938",
+          "similarity": 0.519904375076294
+        },
+        {
+          "name": "Q55171",
+          "similarity": 0.4828260540962219
+        },
+        {
+          "name": "Q213581",
+          "similarity": 0.46758660674095154
+        },
+        {
+          "name": "Q483118",
+          "similarity": 0.46716442704200745
+        }
+      ]
+    },
+    {
+      "entity": "Inception",
+      "neighbors": [
+        {
+          "name": "TheChicagoSunTimes",
+          "similarity": 0.5075876116752625
+        },
+        {
+          "name": "ChristopherNolan",
+          "similarity": 0.4233554005622864
+        },
+        {
+          "name": "Q234114",
+          "similarity": 0.3705131411552429
+        },
+        {
+          "name": "2008",
+          "similarity": 0.37031206488609314
+        },
+        {
+          "name": "Q12439",
+          "similarity": 0.358020156621933
+        }
+      ]
+    },
+    {
+      "entity": "TheGodfather",
+      "neighbors": [
+        {
+          "name": "Paramount",
+          "similarity": 0.5469741225242615
+        },
+        {
+          "name": "Willis",
+          "similarity": 0.4851098656654358
+        },
+        {
+          "name": "Q350979",
+          "similarity": 0.4312729239463806
+        },
+        {
+          "name": "Coppola",
+          "similarity": 0.4073297381401062
+        },
+        {
+          "name": "Q102706436",
+          "similarity": 0.3793717920780182
+        }
+      ]
+    },
+    {
+      "entity": "Q103916",
+      "neighbors": [
+        {
+          "name": "Q181883",
+          "similarity": 0.49852898716926575
+        },
+        {
+          "name": "Q593098",
+          "similarity": 0.483425498008728
+        },
+        {
+          "name": "Q1966965",
+          "similarity": 0.46434035897254944
+        },
+        {
+          "name": "Q154590",
+          "similarity": 0.46377384662628174
+        },
+        {
+          "name": "Q102427",
+          "similarity": 0.4434594213962555
+        }
+      ]
+    }
+  ]
+}
