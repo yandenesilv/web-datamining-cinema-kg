@@ -90,10 +90,9 @@ python -m spacy download en_core_web_lg
 # Start the server
 ollama serve
 
-# Pull a small model
-ollama pull gemma:2b
-# or: ollama pull qwen2.5:0.5b
-# or: ollama pull llama3.2:1b
+# Pull a model (we used qwen2.5:3b)
+ollama pull qwen2.5:3b
+# alternatives: ollama pull gemma:2b, ollama pull llama3.2:1b
 ```
 
 ## How to Run Each Module
@@ -151,19 +150,34 @@ python evaluation.py [model_name]
 # Output: evaluation_results.json
 ```
 
-## RAG Demo Screenshot
+## RAG Demo
+
+Example session with qwen2.5:3b:
 
 ```
-Question: Who directed The Godfather?
+Question : Who directed The Godfather?
 
---- Baseline (LLM only) ---
-The Godfather was directed by Francis Ford Coppola...
+--- BASELINE (LLM seul, sans KB) ---
+Francis Ford Coppola directed "The Godfather." This iconic film was
+released in 1972 and is considered one of the greatest movies ever made.
 
---- RAG (LLM + KB SPARQL) ---
-[SPARQL Query] SELECT ?director WHERE { <Q47703> <P57> ?director }
-[Results] Francis Ford Coppola (Q56094)
-[Repaired?] No
+--- RAG (LLM + Knowledge Base SPARQL) ---
+[Requete SPARQL]
+SELECT ?director ?directorLabel WHERE {
+  ?film rdfs:label ?label . FILTER(CONTAINS(?label, "Godfather"))
+  ?film <http://www.wikidata.org/prop/direct/P57> ?director .
+  OPTIONAL { ?director rdfs:label ?directorLabel }
+}
+[Resultats] (3 lignes)
+  Q56094 | Francis Ford Coppola
+
+Question : How many films have a director in the KB?
+
+--- RAG ---
+[Resultats] 1678
 ```
+
+See `reports/rag_screenshot.html` for a full demo visualization.
 
 ## Hardware Requirements
 

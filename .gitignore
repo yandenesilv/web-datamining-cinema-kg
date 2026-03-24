@@ -40,6 +40,7 @@ results/complex/training_triples/
 # Temp files
 *.tmp
 *.bak
+~$*
 
 # Jupyter
 .ipynb_checkpoints/
