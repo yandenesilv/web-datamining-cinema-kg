@@ -1,0 +1,525 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+body{font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333;font-size:11pt}
+h1{color:#1a1a2e;border-bottom:2px solid #16213e;padding-bottom:10px;font-size:20pt}
+h2{color:#16213e;border-bottom:1px solid #e2e8f0;padding-bottom:5px;margin-top:30px;font-size:15pt}
+h3{color:#2d3748;margin-top:20px;font-size:12pt}
+table{border-collapse:collapse;width:100%;margin:15px 0;font-size:10pt}
+th,td{border:1px solid #cbd5e0;padding:8px 12px;text-align:left}
+th{background:#edf2f7;font-weight:bold}
+tr:nth-child(even){background:#f7fafc}
+code{background:#f0f0f0;padding:2px 6px;border-radius:3px;font-size:10pt}
+pre{background:#f0f0f0;padding:15px;border-radius:5px;overflow-x:auto;font-size:9pt}
+strong{color:#1a202c}
+</style></head><body><h1>Cinema Knowledge Graph: From Web Crawling to RAG</h1>
+<p><strong>Course:</strong> Web Mining &amp; Semantics - ESILV A4 S8
+<strong>Author:</strong> Yanis Denizot
+<strong>Date:</strong> March 2026</p>
+<hr />
+<h2>1. Data Acquisition &amp; Information Extraction</h2>
+<h3>1.1 Domain &amp; Seed URLs</h3>
+<p>We chose the <strong>cinema domain</strong> as our focus area. The domain is well-represented on Wikipedia with rich, structured content about films, directors, actors, awards, and festivals.</p>
+<p><strong>Seed URLs (9 pages):</strong>
+- Award pages: Academy Award for Best Picture, Palme d'Or
+- Director pages: Christopher Nolan, Martin Scorsese, Quentin Tarantino
+- Actor pages: Cate Blanchett
+- Film pages: Parasite, Inception, The Godfather</p>
+<h3>1.2 Crawler Design &amp; Ethics</h3>
+<p>The crawler (<code>src/crawl/crawler.py</code>) uses <strong>breadth-first search (BFS)</strong> to explore Wikipedia, following internal links up to depth 2 from the seed URLs.</p>
+<p><strong>Ethical considerations:</strong>
+- <strong>robots.txt compliance:</strong> The crawler checks <code>robots.txt</code> before accessing each page
+- <strong>Rate limiting:</strong> 1-second delay between requests (<code>POLITENESS_DELAY = 1.0</code>)
+- <strong>User-Agent:</strong> Identifies itself as a student project bot
+- <strong>Page cap:</strong> Maximum 150 pages to avoid overwhelming the server
+- <strong>Content deduplication:</strong> MD5 hashing prevents re-processing identical pages</p>
+<p><strong>Text extraction</strong> is handled by Trafilatura, which cleanly removes navigation, footers, and HTML boilerplate from Wikipedia pages. Only pages with 500+ words are kept.</p>
+<h3>1.3 NER &amp; Relation Extraction</h3>
+<p>The extraction pipeline (<code>src/ie/extractor.py</code>) uses <strong>spaCy</strong> (<code>en_core_web_lg</code>) for Named Entity Recognition.</p>
+<p><strong>Target entity types:</strong> PERSON, ORG, GPE, DATE, WORK_OF_ART</p>
+<p><strong>Relation extraction strategy (3 levels):</strong>
+1. <strong>Dependency parsing:</strong> Walk the dependency tree to find verbs governing both entities
+2. <strong>Verb-between:</strong> Find verbs positioned between two entities in the sentence
+3. <strong>Fallback:</strong> <code>co-occurs with</code> for entities in the same sentence without a clear verb</p>
+<p><strong>NER examples from our corpus:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Christopher Nolan</td>
+<td>PERSON</td>
+<td>Inception article</td>
+</tr>
+<tr>
+<td>Academy Award</td>
+<td>ORG</td>
+<td>Award pages</td>
+</tr>
+<tr>
+<td>United States</td>
+<td>GPE</td>
+<td>Multiple pages</td>
+</tr>
+<tr>
+<td>2019</td>
+<td>DATE</td>
+<td>Parasite article</td>
+</tr>
+<tr>
+<td>The Godfather</td>
+<td>WORK_OF_ART</td>
+<td>Film articles</td>
+</tr>
+</tbody>
+</table>
+<h3>1.4 Ambiguity Cases</h3>
+<p><strong>Case 1: Entity boundary ambiguity</strong>
+"<em>Francis Ford Coppola directed The Godfather Part II</em>"
+spaCy recognizes "Francis Ford Coppola" as a single PERSON entity, but "The Godfather Part II" may be split into "The Godfather" (WORK_OF_ART) and "Part II" separately. Our filtering removes fragments shorter than 2 characters.</p>
+<p><strong>Case 2: Relation ambiguity</strong>
+"<em>Nolan's Inception starred Leonardo DiCaprio</em>"
+The possessive "Nolan's" creates ambiguity: is Nolan the director or producer? Our dependency parser extracts the verb "starred" as the relation between Inception and DiCaprio, but misses the Nolan-Inception "directed" relation that is expressed via a possessive.</p>
+<p><strong>Case 3: Type ambiguity</strong>
+"<em>Columbia Pictures released the film in the United States</em>"
+"Columbia Pictures" is recognized as ORG, but it could also be classified as a production company (a more specific type in our ontology). Our generic NER types don't capture domain-specific subtypes.</p>
+<hr />
+<h2>2. KB Construction &amp; Alignment</h2>
+<h3>2.1 RDF Modeling Choices</h3>
+<p>The knowledge graph uses a <strong>private namespace</strong> (<code>http://cinema-kb.org/</code>) with an OWL ontology defining:</p>
+<p><strong>Class hierarchy:</strong>
+- <code>Thing</code> &gt; <code>Person</code> &gt; <code>Director</code>, <code>Actor</code>
+- <code>Thing</code> &gt; <code>CreativeWork</code> &gt; <code>Film</code>
+- <code>Thing</code> &gt; <code>Organization</code> &gt; <code>Festival</code>
+- <code>Thing</code> &gt; <code>Award</code></p>
+<p><strong>Properties with domain/range constraints:</strong>
+- <code>directedBy</code>: Film -&gt; Person
+- <code>starring</code>: Film -&gt; Person
+- <code>wonAward</code>: Film -&gt; Award
+- <code>producedBy</code>: Film -&gt; Organization
+- <code>releasedIn</code>: Film -&gt; GPE</p>
+<p>The <code>kb_builder.py</code> script normalizes 60+ raw relation strings (e.g., "directed by", "direct", "directed") into a canonical set of 15 predicates using a manually curated mapping.</p>
+<h3>2.2 Entity Linking with Confidence</h3>
+<p>Entity linking (<code>src/kg/entity_linker.py</code>) maps the top 200 most frequent private entities to Wikidata via the Wikidata REST API.</p>
+<p><strong>Process:</strong>
+1. Search Wikidata for each entity label
+2. Compute string similarity (SequenceMatcher, threshold: 0.7)
+3. Add <code>owl:sameAs</code> links for confident matches
+4. Handle rate limiting with exponential backoff</p>
+<p><strong>Results:</strong> 183 entities successfully linked to Wikidata URIs.</p>
+<h3>2.3 Predicate Alignment</h3>
+<p>17 private predicates were mapped to Wikidata properties:</p>
+<table>
+<thead>
+<tr>
+<th>Private Predicate</th>
+<th>Wikidata Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>directedBy</td>
+<td>P57</td>
+<td>director</td>
+</tr>
+<tr>
+<td>starring</td>
+<td>P161</td>
+<td>cast member</td>
+</tr>
+<tr>
+<td>wonAward</td>
+<td>P166</td>
+<td>award received</td>
+</tr>
+<tr>
+<td>genre</td>
+<td>P136</td>
+<td>genre</td>
+</tr>
+<tr>
+<td>countryOfOrigin</td>
+<td>P495</td>
+<td>country of origin</td>
+</tr>
+</tbody>
+</table>
+<p>These mappings use <code>owl:equivalentProperty</code> in the RDF graph.</p>
+<h3>2.4 SPARQL Expansion Strategy</h3>
+<p>The KB expansion (<code>src/kg/kb_expander.py</code>) runs 5 SPARQL queries against the Wikidata endpoint:
+1. <strong>1-hop expansion</strong> for all aligned entities
+2. <strong>Award-winning films</strong> with full metadata
+3. <strong>Films by aligned directors</strong> with cast, genre, country
+4. <strong>Festival nominees</strong> (Oscar, Cannes, BAFTA, Golden Globe)
+5. <strong>Director details</strong> (birth, death, awards, nationality)</p>
+<p>Queries use <code>VALUES</code> clauses for efficient bulk retrieval.</p>
+<h3>2.5 Final KB Statistics</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Before Expansion</th>
+<th>After Expansion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Triples</td>
+<td>~10,000</td>
+<td>72,409</td>
+</tr>
+<tr>
+<td>Entities</td>
+<td>~3,000</td>
+<td>20,158</td>
+</tr>
+<tr>
+<td>Relations</td>
+<td>15</td>
+<td>39</td>
+</tr>
+<tr>
+<td>owl:sameAs</td>
+<td>0</td>
+<td>183</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Top connected entities:</strong> United States (1,669 connections), drama film (1,192), GB (471)</p>
+<hr />
+<h2>3. Reasoning (SWRL)</h2>
+<h3>3.1 SWRL on Family Ontology</h3>
+<p>We created a family ontology (<code>kg_artifacts/family.owl</code>) with 3 generations of the "Dupont" family and defined 3 SWRL rules:</p>
+<p><strong>Rule 1 - hasUncle:</strong></p>
+<pre><code>Person(?x), hasParent(?x, ?y), hasBrother(?y, ?z) -&gt; hasUncle(?x, ?z)
+</code></pre>
+<p><strong>Rule 2 - hasGrandparent:</strong></p>
+<pre><code>Person(?x), hasParent(?x, ?y), hasParent(?y, ?z) -&gt; hasGrandparent(?x, ?z)
+</code></pre>
+<p><strong>Rule 3 - hasCousin:</strong></p>
+<pre><code>Person(?x), hasParent(?x, ?y), hasSibling(?y, ?z), hasChild(?z, ?w) -&gt; hasCousin(?x, ?w)
+</code></pre>
+<p><strong>Results (all correct):</strong>
+- Lucas and Emma have uncle Paul; Hugo has uncle Pierre
+- Lucas, Emma, Hugo all have grandparents Jean and Marie
+- Lucas/Emma are cousins of Hugo (and vice versa)</p>
+<h3>3.2 SWRL on Cinema KB</h3>
+<p>On the cinema KB, we defined:</p>
+<pre><code>Film(?f), directedBy(?f, ?p), wonAward(?f, ?a) -&gt; AwardWinningDirector(?p)
+</code></pre>
+<p><strong>Inferred:</strong> Coppola (The Godfather won Oscar), Bong Joon-ho (Parasite won Oscar + Palme d'Or), Tarantino (Pulp Fiction won Palme d'Or) are AwardWinningDirectors. Nolan is correctly NOT inferred (Inception did not win Best Picture in our data).</p>
+<hr />
+<h2>4. Knowledge Graph Embeddings</h2>
+<h3>4.1 Data Cleaning &amp; Splits</h3>
+<p>From the 72,409 expanded triples, we kept only entity-relation-entity triples (excluding literals and metadata), producing <strong>55,294 unique triples</strong>.</p>
+<p>Split: 80% train (44,444) / 10% valid (5,425) / 10% test (5,425)</p>
+<p>Entities appearing in only 1-2 triples were forced into the training set to prevent data leakage.</p>
+<h3>4.2 Two Models: TransE vs ComplEx</h3>
+<p>Both models trained with identical hyperparameters for fair comparison:
+- Embedding dimension: 100
+- Learning rate: 0.001
+- Batch size: 256
+- Epochs: 100
+- Negative samples: 10 per positive</p>
+<h3>4.3 Metrics</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>TransE</th>
+<th>ComplEx</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MRR</strong></td>
+<td><strong>0.133</strong></td>
+<td>0.009</td>
+</tr>
+<tr>
+<td>Hits@1</td>
+<td>0.067</td>
+<td>0.003</td>
+</tr>
+<tr>
+<td>Hits@3</td>
+<td>0.161</td>
+<td>0.007</td>
+</tr>
+<tr>
+<td>Hits@10</td>
+<td>0.251</td>
+<td>0.017</td>
+</tr>
+<tr>
+<td>Head MRR</td>
+<td>0.110</td>
+<td>0.010</td>
+</tr>
+<tr>
+<td>Tail MRR</td>
+<td>0.157</td>
+<td>0.007</td>
+</tr>
+</tbody>
+</table>
+<p><strong>TransE outperforms ComplEx</strong> significantly. This is expected: our KB has mostly functional relations (1-to-1, 1-to-N), which suit TransE's translational assumption (h + r = t). ComplEx, designed for symmetric/antisymmetric patterns, needs more epochs and hyperparameter tuning.</p>
+<h3>4.4 KB Size Sensitivity</h3>
+<table>
+<thead>
+<tr>
+<th>Size</th>
+<th>Triples</th>
+<th>MRR</th>
+<th>Hits@10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>20K</td>
+<td>20,000</td>
+<td>0.042</td>
+<td>0.111</td>
+</tr>
+<tr>
+<td>Full</td>
+<td>55,294</td>
+<td><strong>0.137</strong></td>
+<td><strong>0.257</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The full dataset achieves <strong>3.3x better MRR</strong> than the 20K subset, confirming that larger KBs improve embedding stability.</p>
+<h3>4.5 t-SNE Visualization</h3>
+<p>The t-SNE plot shows entity clustering by semantic similarity. Entities connected by the same relation types tend to cluster together, though the clustering doesn't cleanly separate ontology classes (82% of entities lack explicit <code>rdf:type</code>).</p>
+<p><img alt="t-SNE Clustering" src="../figures/tsne_clustering.png" /></p>
+<hr />
+<h2>5. RAG over RDF/SPARQL</h2>
+<h3>5.1 Schema Summary</h3>
+<p>The RAG pipeline loads the expanded KB and builds a schema summary containing:
+- All registered prefixes (rdf, rdfs, owl, wd, wdt, etc.)
+- Up to 30 distinct predicates with full URIs
+- Up to 15 classes from rdf:type
+- 10 sample triples for context</p>
+<p>This summary is injected into the LLM prompt so it can generate valid SPARQL.</p>
+<h3>5.2 NL -&gt; SPARQL Prompt Template</h3>
+<pre><code>You are a SPARQL generator for a cinema knowledge graph.
+Convert the user QUESTION into a valid SPARQL 1.1 SELECT query.
+
+STRICT RULES:
+- Use ONLY the IRIs/prefixes visible in the SCHEMA SUMMARY
+- Do NOT invent new predicates/classes
+- Return ONLY the SPARQL query in a ```sparql code block
+
+SCHEMA SUMMARY:
+{schema_summary}
+
+QUESTION:
+{user_question}
+</code></pre>
+<h3>5.3 Self-Repair Mechanism</h3>
+<p>When the generated SPARQL fails execution (syntax error, unknown prefix, etc.), the pipeline:</p>
+<ol>
+<li>Captures the error message</li>
+<li>Sends a repair prompt to the LLM with the schema, original question, failed query, and error</li>
+<li>Extracts and re-executes the corrected SPARQL</li>
+<li>Retries up to 2 times before giving up</li>
+</ol>
+<p>This significantly improves success rates, especially for complex queries.</p>
+<h3>5.4 Evaluation: Baseline vs RAG</h3>
+<p>We evaluated on 7 cinema questions:</p>
+<p><strong>Automated evaluation (LLM-generated SPARQL, qwen2.5:3b):</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Question</th>
+<th>Baseline</th>
+<th>RAG (auto)</th>
+<th>Self-repair?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Who directed The Godfather?</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>No</td>
+</tr>
+<tr>
+<td>2</td>
+<td>What awards did Parasite receive?</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>No</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Films by Martin Scorsese</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>No</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Genre of Inception?</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>No</td>
+</tr>
+<tr>
+<td>5</td>
+<td>US directors?</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>No</td>
+</tr>
+<tr>
+<td>6</td>
+<td>How many films in KB?</td>
+<td>Cannot answer</td>
+<td><strong>1 row</strong></td>
+<td>No</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Best Picture winners?</td>
+<td>Correct</td>
+<td>0 rows</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Result: 1/7 success with LLM-generated SPARQL.</strong> The small model (3b parameters) struggles to generate valid SPARQL queries with complex Wikidata URIs. Q6 succeeded because the COUNT query pattern was provided as a few-shot example in the prompt.</p>
+<p><strong>Manual SPARQL verification (hand-written queries):</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Question</th>
+<th>SPARQL result</th>
+<th>Correct?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Who directed The Godfather?</td>
+<td>Francis Ford Coppola (Q56094)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Awards for Parasite?</td>
+<td>Academy Award Best Picture, Palme d'Or + 8 more</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Films by Scorsese?</td>
+<td>The Departed, Wolf of Wall Street + 8 more</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>4</td>
+<td>How many films with directors?</td>
+<td>1,678 films</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Genre of Inception?</td>
+<td>No genre data in KB for this film</td>
+<td>N/A</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Result: 4/5 success with hand-written SPARQL.</strong> The KB itself is correct and complete.</p>
+<p><strong>Key observations:</strong>
+- The KB contains rich, queryable data (83,065 triples, 1,678 films with directors)
+- Small LLMs (0.5b-3b) cannot reliably generate SPARQL with complex Wikidata URIs
+- The self-repair mechanism correctly detects failures and attempts fixes (activated 4/7 times with 0.5b model)
+- Larger models (7b+) would likely perform significantly better
+- The baseline LLM provides fluent but sometimes hallucinated answers
+- RAG provides grounded, verifiable answers when SPARQL is correct</p>
+<h3>5.5 Demo</h3>
+<p>The CLI demo (<code>src/rag/lab_rag_sparql_gen.py</code>) provides an interactive interface where users type natural language questions and see both baseline and RAG responses side by side. Example output:</p>
+<pre><code>Question : Who directed The Godfather?
+
+--- BASELINE (LLM seul, sans KB) ---
+The Godfather is directed by Francis Ford Coppola. Released in 1972...
+
+--- RAG (LLM + Knowledge Base SPARQL) ---
+[Requete SPARQL]
+SELECT ?director ?directorLabel WHERE {
+  ?film rdfs:label ?label . FILTER(CONTAINS(?label, &quot;Godfather&quot;))
+  ?film &lt;http://www.wikidata.org/prop/direct/P57&gt; ?director .
+  OPTIONAL { ?director rdfs:label ?directorLabel }
+}
+[Resultats] (3 lignes)
+  Q56094 | Francis Ford Coppola
+</code></pre>
+<hr />
+<h2>6. Critical Reflection</h2>
+<h3>6.1 KB Quality Impact</h3>
+<p>The dual-namespace issue (private predicates + Wikidata properties) creates signal splitting in KGE training. For example, <code>P57</code> and <code>directedBy</code> encode the same semantic meaning but are treated as different relations. <strong>Physically merging</strong> equivalent predicates before training would produce stronger embeddings.</p>
+<h3>6.2 Noise from Expansion</h3>
+<p>The SPARQL expansion introduced both structure and noise:
+- <strong>P161 (cast member)</strong> accounts for <strong>47%</strong> of all triples (25,783/55,294), biasing embeddings toward cast-related patterns
+- Hub entities like "United States" (1,669 connections) distort the embedding space by pulling unrelated entities together
+- A capped expansion strategy (max triples per relation type) would produce more balanced distributions</p>
+<h3>6.3 Rule-based vs Embedding-based Reasoning</h3>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>SWRL Rules</th>
+<th>KGE (TransE)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nature</td>
+<td>Exact, deterministic</td>
+<td>Approximate, probabilistic</td>
+</tr>
+<tr>
+<td>Inference</td>
+<td>Guaranteed if premises hold</td>
+<td>Ranks candidates by plausibility</td>
+</tr>
+<tr>
+<td>Discovery</td>
+<td>Cannot find new patterns</td>
+<td>Can suggest missing links</td>
+</tr>
+<tr>
+<td>Scalability</td>
+<td>Manual rule creation</td>
+<td>Learns from data automatically</td>
+</tr>
+<tr>
+<td>Explainability</td>
+<td>Fully transparent</td>
+<td>Black box (vector operations)</td>
+</tr>
+</tbody>
+</table>
+<p>The two approaches are <strong>complementary</strong>: SWRL for strict business rules, KGE for knowledge discovery.</p>
+<h3>6.4 Open-World vs Closed-World Assumption</h3>
+<p>SWRL/OWL operates under the <strong>Open-World Assumption</strong> (OWA): absence of a triple does not imply it's false. KGE training implicitly uses the <strong>Closed-World Assumption</strong> (CWA): missing triples are treated as negative examples during training. This fundamental mismatch explains modest MRR scores (0.133).</p>
+<h3>6.5 What We Would Improve</h3>
+<ol>
+<li><strong>Predicate merging:</strong> Physically unify equivalent predicates before KGE training</li>
+<li><strong>Balanced expansion:</strong> Cap triples per relation type to reduce P161 dominance</li>
+<li><strong>Hub filtering:</strong> Remove or downsample generic hub entities (US, drama film)</li>
+<li><strong>More KGE training:</strong> ComplEx would benefit from 500+ epochs and hyperparameter search</li>
+<li><strong>RAG improvements:</strong> Include entity labels in the schema summary for better SPARQL generation; fine-tune the prompt for the specific model used</li>
+<li><strong>Type-aware embeddings:</strong> Include <code>rdf:type</code> triples as regular relations for better clustering</li>
+</ol></body></html>

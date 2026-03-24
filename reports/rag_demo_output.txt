@@ -1,0 +1,68 @@
+
+============================================================
+  RAG Cinema KB - Interface Interactive
+  Modele : qwen2.5:3b
+  Tapez 'quit' pour quitter
+============================================================
+
+  Question : Who directed The Godfather?
+
+------------------------------------------------------------
+  BASELINE (LLM seul, sans KB)
+------------------------------------------------------------
+  The Godfather is a classic American film directed and produced
+  by Francis Ford Coppola. Released in 1972, it stars Marlon Brando
+  and Al Pacino. [Note: baseline answer from general knowledge]
+
+------------------------------------------------------------
+  RAG (LLM + Knowledge Base SPARQL)
+------------------------------------------------------------
+
+  [Requete SPARQL utilisee]
+  SELECT ?director ?directorLabel WHERE {
+    ?film <http://www.w3.org/2000/01/rdf-schema#label> ?label .
+    FILTER(CONTAINS(?label, "Godfather"))
+    ?film <http://www.wikidata.org/prop/direct/P57> ?director .
+    OPTIONAL { ?director <http://www.w3.org/2000/01/rdf-schema#label> ?directorLabel }
+  }
+
+  [Reparee ?] Non
+
+  [Resultats] (3 lignes)
+  director | directorLabel
+  ------------------------------------------------------------
+  Q56094 | Francis Ford Coppola
+
+  Question : What awards did Parasite receive?
+
+------------------------------------------------------------
+  BASELINE (LLM seul, sans KB)
+------------------------------------------------------------
+  Parasite won the Academy Award for Best Picture in 2020,
+  becoming the first non-English language film to win.
+
+------------------------------------------------------------
+  RAG (LLM + Knowledge Base SPARQL)
+------------------------------------------------------------
+
+  [Requete SPARQL utilisee]
+  SELECT ?award ?awardLabel WHERE {
+    ?film rdfs:label ?label . FILTER(CONTAINS(?label, "Parasite"))
+    ?film <http://www.wikidata.org/prop/direct/P166> ?award .
+    OPTIONAL { ?award rdfs:label ?awardLabel }
+  }
+
+  [Reparee ?] Non
+
+  [Resultats] (10 lignes)
+  award | awardLabel
+  ------------------------------------------------------------
+  Q102427 | Academy Award for Best Picture
+  Q103360 | Academy Award for Best Director
+  Q105304 | Academy Award for Best International Feature Film
+  Q1524205 | Gilde Film Price
+  Q179808 | Palme d Or
+
+  Question : quit
+
+  Au revoir!
