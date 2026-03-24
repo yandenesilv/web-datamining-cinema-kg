@@ -68,7 +68,7 @@ project-root/
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/web-datamining-cinema-kg.git
+git clone https://github.com/yandenesilv/web-datamining-cinema-kg.git
 cd web-datamining-cinema-kg
 
 # Create virtual environment (recommended)
